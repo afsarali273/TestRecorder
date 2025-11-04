@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Recorder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+      color: #e4e4e7;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      padding: 20px 32px;
+      background: rgba(30, 30, 46, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(78, 201, 176, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #4ec9b0 0%, #3a9d88 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(78, 201, 176, 0.3);
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #4ec9b0 0%, #7dd3c0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .count {
+      background: rgba(78, 201, 176, 0.1);
+      color: #4ec9b0;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba(78, 201, 176, 0.2);
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .status {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    .status.paused {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      animation: none;
+    }
+    .status.stopped {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+      animation: none;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn-pause {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+    .btn-resume {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .btn-stop {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      overflow: hidden;
+      background: rgba(78, 201, 176, 0.05);
+    }
+    .section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: rgba(30, 30, 46, 0.6);
+      backdrop-filter: blur(10px);
+      min-width: 0;
+    }
+    .section.events-section {
+      flex: 1;
+      max-height: 40%;
+    }
+    .section.code-section {
+      flex: 1;
+      max-height: 60%;
+    }
+    .section-title {
+      padding: 16px 24px;
+      background: rgba(45, 45, 60, 0.8);
+      font-size: 14px;
+      font-weight: 600;
+      color: #e4e4e7;
+      border-bottom: 2px solid rgba(78, 201, 176, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, #4ec9b0 0%, #7dd3c0 100%);
+      border-radius: 2px;
+    }
+    #events {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #events::-webkit-scrollbar {
+      width: 8px;
+    }
+    #events::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    #events::-webkit-scrollbar-thumb {
+      background: rgba(78, 201, 176, 0.3);
+      border-radius: 4px;
+    }
+    #events::-webkit-scrollbar-thumb:hover {
+      background: rgba(78, 201, 176, 0.5);
+    }
+    .event {
+      padding: 14px 16px;
+      margin: 8px 0;
+      background: rgba(45, 45, 60, 0.6);
+      border-left: 4px solid #007acc;
+      border-radius: 8px;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      position: relative;
+      padding-right: 50px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .event:hover {
+      background: rgba(45, 45, 60, 0.9);
+      transform: translateX(4px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .event:hover .delete-btn {
+      opacity: 1;
+    }
+    .delete-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .delete-btn:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      transform: translateY(-50%) scale(1.05);
+    }
+    .event.click { border-left-color: #4ec9b0; }
+    .event.input { border-left-color: #ce9178; }
+    .event.assertion { border-left-color: #dcdcaa; }
+    .event.navigation { border-left-color: #569cd6; }
+    .event.check { border-left-color: #c586c0; }
+    .event.select { border-left-color: #4fc1ff; }
+    .event.press { border-left-color: #b5cea8; }
+    .event.submit { border-left-color: #f48771; }
+    .event.dblclick { border-left-color: #9cdcfe; }
+    .event.hover { border-left-color: #808080; }
+    .event strong {
+      color: #4ec9b0;
+      font-weight: 600;
+    }
+    .event small {
+      color: #a1a1aa;
+      font-size: 12px;
+    }
+    .tabs {
+      display: flex;
+      background: rgba(45, 45, 60, 0.8);
+      border-bottom: 2px solid rgba(78, 201, 176, 0.2);
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+    }
+    .tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #a1a1aa;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .tab:hover {
+      background: rgba(78, 201, 176, 0.1);
+      color: #e4e4e7;
+    }
+    .tab.active {
+      color: #4ec9b0;
+      border-bottom-color: #4ec9b0;
+      background: rgba(78, 201, 176, 0.05);
+    }
+    .tab-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 0;
+    }
+    #languageSelect {
+      padding: 8px 16px;
+      background: rgba(30, 30, 46, 0.8);
+      color: #e4e4e7;
+      border: 1px solid rgba(78, 201, 176, 0.3);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    #languageSelect:hover {
+      border-color: rgba(78, 201, 176, 0.5);
+      background: rgba(30, 30, 46, 1);
+    }
+    #languageSelect:focus {
+      border-color: #4ec9b0;
+      box-shadow: 0 0 0 3px rgba(78, 201, 176, 0.1);
+    }
+    .copy-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .copy-btn:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    .copy-btn.copied {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    .code-content {
+      flex: 1;
+      overflow: hidden;
+      background: rgba(15, 15, 35, 0.8);
+    }
+    .code-panel {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+    }
+    .code-panel::-webkit-scrollbar {
+      width: 10px;
+    }
+    .code-panel::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    .code-panel::-webkit-scrollbar-thumb {
+      background: rgba(78, 201, 176, 0.3);
+      border-radius: 5px;
+    }
+    .code-panel::-webkit-scrollbar-thumb:hover {
+      background: rgba(78, 201, 176, 0.5);
+    }
+    .code-panel.active { display: block; }
+    pre {
+      margin: 0;
+      padding: 24px;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #e4e4e7;
+    }
+    .code-line { color: #ce9178; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🎬</div>
+      <h2>Test Recorder</h2>
+      <div class="count" id="count">0 events</div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-pause" id="pauseBtn">
+        <span>⏸</span>
+        <span>Pause</span>
+      </button>
+      <button class="btn btn-stop" id="stopBtn">
+        <span>⏹</span>
+        <span>Stop</span>
+      </button>
+      <div class="status" id="status">
+        <span style="width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block;"></span>
+        <span>RECORDING</span>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="section events-section">
+      <div class="section-title">Events</div>
+      <div id="events"></div>
+    </div>
+    <div class="section code-section">
+      <div class="tabs">
+        <div class="tab-group">
+          <div class="tab active" data-tab="playwright">🎭 Playwright</div>
+          <div class="tab" data-tab="selenium">🔧 Selenium</div>
+          <div class="tab" data-tab="uft">⚡ UFT</div>
+          <div class="tab" data-tab="pom">📦 Page Object</div>
+        </div>
+        <div class="tab-controls">
+          <select id="languageSelect">
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+          </select>
+          <button class="copy-btn" id="copyBtn">
+            <span>📋</span>
+            <span>Copy Code</span>
+          </button>
+        </div>
+      </div>
+      <div class="code-content">
+        <div class="code-panel active" id="playwright-code">
+          <pre id="playwright-pre">// Interact with the page to see generated code...</pre>
+        </div>
+        <div class="code-panel" id="selenium-code">
+          <pre id="selenium-pre"># Interact with the page to see generated code...</pre>
+        </div>
+        <div class="code-panel" id="uft-code">
+          <pre id="uft-pre">' Interact with the page to see generated code...</pre>
+        </div>
+        <div class="code-panel" id="pom-code">
+          <pre id="pom-pre">// Interact with the page to see generated code...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const eventsDiv = document.getElementById('events');
+    const countSpan = document.getElementById('count');
+    const playwrightPre = document.getElementById('playwright-pre');
+    const seleniumPre = document.getElementById('selenium-pre');
+    const uftPre = document.getElementById('uft-pre');
+    const pomPre = document.getElementById('pom-pre');
+    const statusDiv = document.getElementById('status');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    
+    let events = [];
+    let isPaused = false;
+    let isStopped = false;
+    let activeTab = 'playwright';
+    let selectedLanguage = 'javascript';
+
+    // Language selection
+    const languageSelect = document.getElementById('languageSelect');
+    languageSelect.addEventListener('change', () => {
+      selectedLanguage = languageSelect.value;
+      updateCode();
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-code').classList.add('active');
+        activeTab = tab.dataset.tab;
+      });
+    });
+
+    // Copy functionality
+    const copyBtn = document.getElementById('copyBtn');
+    copyBtn.addEventListener('click', async () => {
+      const code = activeTab === 'playwright' ? playwrightPre.textContent : 
+                   activeTab === 'selenium' ? seleniumPre.textContent :
+                   activeTab === 'uft' ? uftPre.textContent : pomPre.textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        copyBtn.innerHTML = '<span>✅</span><span>Copied!</span>';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.innerHTML = '<span>📋</span><span>Copy Code</span>';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        copyBtn.innerHTML = '<span>❌</span><span>Failed</span>';
+        setTimeout(() => {
+          copyBtn.innerHTML = '<span>📋</span><span>Copy Code</span>';
+        }, 2000);
+      }
+    });
+
+    function getPlaywrightLocator(e) {
+      if (e.playwright) {
+        return `page.${e.playwright}`;
+      }
+      if ('xpath' in e && e.xpath) {
+        return `page.locator('xpath=${e.xpath}')`;
+      } else if ('css' in e && e.css) {
+        const css = e.css;
+        if (css.match(/\[role="([^"]+)"\]/)) {
+          const role = css.match(/\[role="([^"]+)"\]/)[1];
+          return `page.getByRole('${role}')`;
+        } else if (css.match(/\[aria-label="([^"]+)"\]/)) {
+          const label = css.match(/\[aria-label="([^"]+)"\]/)[1];
+          return `page.getByLabel('${label}')`;
+        } else if (css.match(/\[placeholder="([^"]+)"\]/)) {
+          const placeholder = css.match(/\[placeholder="([^"]+)"\]/)[1];
+          return `page.getByPlaceholder('${placeholder}')`;
+        } else if (css.match(/\[data-testid="([^"]+)"\]/)) {
+          const testid = css.match(/\[data-testid="([^"]+)"\]/)[1];
+          return `page.getByTestId('${testid}')`;
+        } else if (css.includes(':has-text')) {
+          const text = css.match(/:has-text\("([^"]+)"\)/)?.[1] || '';
+          return `page.getByText('${text}')`;
+        } else {
+          return `page.locator('${css}')`;
+        }
+      } else {
+        const selector = e.css || e.xpath || e.selector || '';
+        return `page.locator('${selector.startsWith('//') ? 'xpath=' + selector : selector}')`;
+      }
+    }
+
+    function generatePlaywrightCode(events) {
+      const validEvents = events.filter(e => e !== null);
+      if (validEvents.length === 0) {
+        return selectedLanguage === 'python' ? '# Interact with the page to see generated code...' : '// Interact with the page to see generated code...';
+      }
+      
+      if (selectedLanguage === 'typescript') {
+        return generatePlaywrightTypeScript(validEvents);
+      } else if (selectedLanguage === 'python') {
+        return generatePlaywrightPython(validEvents);
+      } else if (selectedLanguage === 'java') {
+        return generatePlaywrightJava(validEvents);
+      }
+      
+      return validEvents.map(e => {
+        let locator = getPlaywrightLocator(e);
+        
+        if (e.type === 'navigation') return `await page.goto('${e.url}');`;
+        if (e.type === 'click') return `await ${locator}.click();`;
+        if (e.type === 'dblclick') return `await ${locator}.dblclick();`;
+        if (e.type === 'input') return `await ${locator}.fill('${e.value}');`;
+        if (e.type === 'check') return `await ${locator}.setChecked(${e.checked});`;
+        if (e.type === 'select') return `await ${locator}.selectOption('${e.value}');`;
+        if (e.type === 'press') return `await ${locator}.press('${e.key}');`;
+        if (e.type === 'hover') return `await ${locator}.hover();`;
+        if (e.type === 'submit') return `await ${locator}.evaluate(form => form.submit());`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `await expect(${locator}).toContainText('${e.value}');`;
+          if (e.assertType === 'isVisible') return `await expect(${locator}).toBeVisible();`;
+          if (e.assertType === 'hasValue') return `await expect(${locator}).toHaveValue('${e.value}');`;
+          if (e.assertType === 'isEnabled') return `await expect(${locator}).toBeEnabled();`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+    
+    function generatePlaywrightTypeScript(events) {
+      return events.map(e => {
+        let locator = getPlaywrightLocator(e);
+        if (e.type === 'navigation') return `await page.goto('${e.url}');`;
+        if (e.type === 'click') return `await ${locator}.click();`;
+        if (e.type === 'dblclick') return `await ${locator}.dblclick();`;
+        if (e.type === 'input') return `await ${locator}.fill('${e.value}');`;
+        if (e.type === 'check') return `await ${locator}.setChecked(${e.checked});`;
+        if (e.type === 'select') return `await ${locator}.selectOption('${e.value}');`;
+        if (e.type === 'press') return `await ${locator}.press('${e.key}');`;
+        if (e.type === 'hover') return `await ${locator}.hover();`;
+        if (e.type === 'submit') return `await ${locator}.evaluate((form: HTMLFormElement) => form.submit());`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `await expect(${locator}).toContainText('${e.value}');`;
+          if (e.assertType === 'isVisible') return `await expect(${locator}).toBeVisible();`;
+          if (e.assertType === 'hasValue') return `await expect(${locator}).toHaveValue('${e.value}');`;
+          if (e.assertType === 'isEnabled') return `await expect(${locator}).toBeEnabled();`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+    
+    function generatePlaywrightPython(events) {
+      return events.map(e => {
+        let locator = getPlaywrightLocator(e).replace('page.', '');
+        if (e.type === 'navigation') return `page.goto('${e.url}')`;
+        if (e.type === 'click') return `page.${locator}.click()`;
+        if (e.type === 'dblclick') return `page.${locator}.dblclick()`;
+        if (e.type === 'input') return `page.${locator}.fill('${e.value}')`;
+        if (e.type === 'check') return `page.${locator}.set_checked(${e.checked ? 'True' : 'False'})`;
+        if (e.type === 'select') return `page.${locator}.select_option('${e.value}')`;
+        if (e.type === 'press') return `page.${locator}.press('${e.key}')`;
+        if (e.type === 'hover') return `page.${locator}.hover()`;
+        if (e.type === 'submit') return `page.${locator}.evaluate('form => form.submit()')`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `expect(page.${locator}).to_contain_text('${e.value}')`;
+          if (e.assertType === 'isVisible') return `expect(page.${locator}).to_be_visible()`;
+          if (e.assertType === 'hasValue') return `expect(page.${locator}).to_have_value('${e.value}')`;
+          if (e.assertType === 'isEnabled') return `expect(page.${locator}).to_be_enabled()`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+    
+    function generatePlaywrightJava(events) {
+      return events.map(e => {
+        let locator = getPlaywrightLocator(e).replace('page.', '');
+        if (e.type === 'navigation') return `page.navigate("${e.url}");`;
+        if (e.type === 'click') return `page.${locator}.click();`;
+        if (e.type === 'dblclick') return `page.${locator}.dblclick();`;
+        if (e.type === 'input') return `page.${locator}.fill("${e.value}");`;
+        if (e.type === 'check') return `page.${locator}.setChecked(${e.checked});`;
+        if (e.type === 'select') return `page.${locator}.selectOption("${e.value}");`;
+        if (e.type === 'press') return `page.${locator}.press("${e.key}");`;
+        if (e.type === 'hover') return `page.${locator}.hover();`;
+        if (e.type === 'submit') return `page.${locator}.evaluate("form => form.submit()");`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `assertThat(page.${locator}).containsText("${e.value}");`;
+          if (e.assertType === 'isVisible') return `assertThat(page.${locator}).isVisible();`;
+          if (e.assertType === 'hasValue') return `assertThat(page.${locator}).hasValue("${e.value}");`;
+          if (e.assertType === 'isEnabled') return `assertThat(page.${locator}).isEnabled();`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+
+    function generateUFTCode(events) {
+      const validEvents = events.filter(e => e !== null);
+      if (validEvents.length === 0) return "' Interact with the page to see generated code...";
+      
+      return validEvents.map(e => {
+        let descriptor = '';
+        
+        // Build UFT object descriptor
+        if (e.css) {
+          if (e.css.includes('data-testid')) {
+            const match = e.css.match(/data-testid="([^"]+)"/);
+            descriptor = match ? `"name:=${match[1]}"` : `"xpath:=${e.xpath || e.css}"`;
+          } else if (e.css.includes('name=')) {
+            const match = e.css.match(/name="([^"]+)"/);
+            descriptor = match ? `"name:=${match[1]}"` : `"xpath:=${e.xpath || e.css}"`;
+          } else if (e.css.includes('#')) {
+            const match = e.css.match(/#([a-zA-Z][a-zA-Z0-9_-]*)/);
+            descriptor = match ? `"html id:=${match[1]}"` : `"xpath:=${e.xpath || e.css}"`;
+          } else if (e.css.includes(':has-text')) {
+            const match = e.css.match(/:has-text\("([^"]+)"\)/);
+            descriptor = match ? `"innertext:=${match[1]}"` : `"xpath:=${e.xpath || e.css}"`;
+          } else {
+            descriptor = `"xpath:=${e.xpath || e.css}"`;
+          }
+        } else if (e.xpath) {
+          descriptor = `"xpath:=${e.xpath}"`;
+        } else {
+          descriptor = `"index:=0"`;
+        }
+        
+        if (e.type === 'navigation') return `Browser("Browser").Navigate "${e.url}"`;
+        if (e.type === 'click') return `Browser("Browser").Page("Page").WebElement(${descriptor}).Click`;
+        if (e.type === 'dblclick') return `Browser("Browser").Page("Page").WebElement(${descriptor}).DblClick`;
+        if (e.type === 'input') return `Browser("Browser").Page("Page").WebEdit(${descriptor}).Set "${e.value}"`;
+        if (e.type === 'check') return `Browser("Browser").Page("Page").WebCheckBox(${descriptor}).Set "${e.checked ? 'ON' : 'OFF'}"`;
+        if (e.type === 'select') return `Browser("Browser").Page("Page").WebList(${descriptor}).Select "${e.value}"`;
+        if (e.type === 'press') return `Browser("Browser").Page("Page").WebEdit(${descriptor}).Type micReturn`;
+        if (e.type === 'hover') return `Browser("Browser").Page("Page").WebElement(${descriptor}).FireEvent "onmouseover"`;
+        if (e.type === 'submit') return `Browser("Browser").Page("Page").WebElement(${descriptor}).Submit`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `If InStr(Browser("Browser").Page("Page").WebElement(${descriptor}).GetROProperty("innertext"), "${e.value}") = 0 Then\n    Reporter.ReportEvent micFail, "Text Verification", "Expected text not found"\nEnd If`;
+          if (e.assertType === 'isVisible') return `If Browser("Browser").Page("Page").WebElement(${descriptor}).Exist(0) = False Then\n    Reporter.ReportEvent micFail, "Visibility Check", "Element not visible"\nEnd If`;
+          if (e.assertType === 'hasValue') return `If Browser("Browser").Page("Page").WebEdit(${descriptor}).GetROProperty("value") <> "${e.value}" Then\n    Reporter.ReportEvent micFail, "Value Check", "Value mismatch"\nEnd If`;
+          if (e.assertType === 'isEnabled') return `If Browser("Browser").Page("Page").WebElement(${descriptor}).GetROProperty("disabled") = True Then\n    Reporter.ReportEvent micFail, "Enabled Check", "Element is disabled"\nEnd If`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+
+    function generateSeleniumCode(events) {
+      const validEvents = events.filter(e => e !== null);
+      if (validEvents.length === 0) return '# Interact with the page to see generated code...';
+      
+      const escapeSelector = (sel) => sel.replace(/"/g, '\\"');
+      
+      return validEvents.map(e => {
+        let selector, locatorType;
+        if ('css' in e && e.css) {
+          selector = escapeSelector(e.css);
+          locatorType = 'CSS_SELECTOR';
+        } else if ('xpath' in e && e.xpath) {
+          selector = escapeSelector(e.xpath);
+          locatorType = 'XPATH';
+        } else {
+          selector = escapeSelector(e.css || e.xpath || e.selector || '');
+          locatorType = selector === e.xpath ? 'XPATH' : 'CSS_SELECTOR';
+        }
+        const byType = locatorType === 'XPATH' ? 'By.XPATH' : 'By.CSS_SELECTOR';
+        if (e.type === 'navigation') return `driver.get("${e.url}")`;
+        if (e.type === 'click') return `driver.find_element(${byType}, "${selector}").click()`;
+        if (e.type === 'dblclick') return `ActionChains(driver).double_click(driver.find_element(${byType}, "${selector}")).perform()`;
+        if (e.type === 'input') return `driver.find_element(${byType}, "${selector}").send_keys("${e.value}")`;
+        if (e.type === 'check') return e.checked ? `driver.find_element(${byType}, "${selector}").click()` : `# already unchecked`;
+        if (e.type === 'select') return `Select(driver.find_element(${byType}, "${selector}")).select_by_value("${e.value}")`;
+        if (e.type === 'press') return `driver.find_element(${byType}, "${selector}").send_keys(Keys.${e.key.toUpperCase()})`;
+        if (e.type === 'hover') return `ActionChains(driver).move_to_element(driver.find_element(${byType}, "${selector}")).perform()`;
+        if (e.type === 'submit') return `driver.find_element(${byType}, "${selector}").submit()`;
+        if (e.type === 'assertion') {
+          if (e.assertType === 'containsText') return `assert "${e.value}" in driver.find_element(${byType}, "${selector}").text`;
+          if (e.assertType === 'isVisible') return `assert driver.find_element(${byType}, "${selector}").is_displayed()`;
+          if (e.assertType === 'hasValue') return `assert driver.find_element(${byType}, "${selector}").get_attribute("value") == "${e.value}"`;
+          if (e.assertType === 'isEnabled') return `assert driver.find_element(${byType}, "${selector}").is_enabled()`;
+        }
+        return '';
+      }).filter(Boolean).join('\n');
+    }
+
+    function updateCode() {
+      playwrightPre.textContent = generatePlaywrightCode(events);
+      seleniumPre.textContent = generateSeleniumCode(events);
+      uftPre.textContent = generateUFTCode(events);
+      pomPre.textContent = generatePOMCode(events);
+    }
+    
+    function generatePOMCode(events) {
+      const validEvents = events.filter(e => e !== null);
+      if (validEvents.length === 0) {
+        return selectedLanguage === 'python' ? '# Interact with the page to see generated code...' : '// Interact with the page to see generated code...';
+      }
+      
+      // Extract unique locators for page class
+      const locators = new Map();
+      validEvents.forEach((e, idx) => {
+        if (e.css || e.xpath) {
+          const key = e.css || e.xpath;
+          if (!locators.has(key)) {
+            const name = generateLocatorName(e, idx);
+            locators.set(key, { name, css: e.css, xpath: e.xpath });
+          }
+        }
+      });
+      
+      if (selectedLanguage === 'python') {
+        return generatePOMPython(validEvents, locators);
+      } else if (selectedLanguage === 'java') {
+        return generatePOMJava(validEvents, locators);
+      } else if (selectedLanguage === 'typescript') {
+        return generatePOMTypeScript(validEvents, locators);
+      } else {
+        return generatePOMJavaScript(validEvents, locators);
+      }
+    }
+    
+    function generateLocatorName(e, idx) {
+      // Extract from playwright locator first (most meaningful)
+      if (e.playwright) {
+        if (e.playwright.includes('getByRole')) {
+          const nameMatch = e.playwright.match(/name:\s*['"]([^'"]+)['"]/);
+          if (nameMatch) {
+            const name = nameMatch[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            if (e.playwright.includes("'button'")) return name + '_button';
+            if (e.playwright.includes("'link'")) return name + '_link';
+            return name + '_element';
+          }
+        }
+        if (e.playwright.includes('getByTestId')) {
+          const match = e.playwright.match(/getByTestId\(['"]([^'"]+)['"]\)/);
+          return match ? match[1].replace(/-/g, '_') : `element_${idx}`;
+        }
+        if (e.playwright.includes('getByLabel')) {
+          const match = e.playwright.match(/getByLabel\(['"]([^'"]+)['"]\)/);
+          return match ? match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_field' : `element_${idx}`;
+        }
+        if (e.playwright.includes('getByPlaceholder')) {
+          const match = e.playwright.match(/getByPlaceholder\(['"]([^'"]+)['"]\)/);
+          return match ? match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_input' : `element_${idx}`;
+        }
+        if (e.playwright.includes('getByText')) {
+          const match = e.playwright.match(/getByText\(['"]([^'"]+)['"]\)/);
+          return match ? match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 30) + '_text' : `element_${idx}`;
+        }
+        if (e.playwright.includes('filter')) {
+          const textMatch = e.playwright.match(/hasText:\s*['"]([^'"]+)['"]/);
+          if (textMatch) {
+            return textMatch[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 30) + '_filtered';
+          }
+        }
+      }
+      
+      // Fallback to CSS/XPath extraction
+      if (e.css) {
+        if (e.css.includes('data-testid')) {
+          const match = e.css.match(/data-testid="([^"]+)"/);
+          return match ? match[1].replace(/-/g, '_') : `element_${idx}`;
+        }
+        if (e.css.includes('placeholder')) {
+          const match = e.css.match(/placeholder="([^"]+)"/);
+          return match ? match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_input' : `element_${idx}`;
+        }
+        if (e.css.includes('aria-label')) {
+          const match = e.css.match(/aria-label="([^"]+)"/);
+          return match ? match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_element' : `element_${idx}`;
+        }
+        if (e.css.includes('name=')) {
+          const match = e.css.match(/name="([^"]+)"/);
+          return match ? match[1].replace(/-/g, '_') + '_field' : `element_${idx}`;
+        }
+        if (e.css.includes('#')) {
+          const match = e.css.match(/#([a-zA-Z][a-zA-Z0-9_-]*)/);
+          return match ? match[1].replace(/-/g, '_') : `element_${idx}`;
+        }
+        if (e.css.includes(':has-text')) {
+          const match = e.css.match(/:has-text\("([^"]+)"\)/);
+          if (match) {
+            const text = match[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 30);
+            if (e.css.startsWith('button')) return text + '_button';
+            if (e.css.startsWith('a')) return text + '_link';
+            return text + '_element';
+          }
+        }
+      }
+      
+      // Action-based naming
+      if (e.type === 'input') return `input_field_${idx}`;
+      if (e.type === 'click') return `clickable_${idx}`;
+      if (e.type === 'select') return `dropdown_${idx}`;
+      if (e.type === 'check') return `checkbox_${idx}`;
+      
+      return `element_${idx}`;
+    }
+    
+    function generatePOMJavaScript(events, locators) {
+      let pageClass = `class Page {\n  constructor(page) {\n    this.page = page;\n`;
+      
+      locators.forEach((loc, key) => {
+        const event = events.find(e => (e.css || e.xpath) === key);
+        const locatorStr = event?.playwright ? event.playwright : 
+                          loc.xpath ? `locator('xpath=${loc.xpath}')` : `locator('${loc.css}')`;
+        pageClass += `    this.${loc.name} = page.${locatorStr};\n`;
+      });
+      
+      pageClass += `  }\n}\n\n`;
+      
+      let testCode = `// Test Code\ntest('recorded test', async ({ page }) => {\n  const pageObj = new Page(page);\n\n`;
+      
+      events.forEach(e => {
+        const key = e.css || e.xpath;
+        const loc = locators.get(key);
+        const locName = loc ? `pageObj.${loc.name}` : 'page';
+        
+        if (e.type === 'navigation') testCode += `  await page.goto('${e.url}');\n`;
+        else if (e.type === 'click') testCode += `  await ${locName}.click();\n`;
+        else if (e.type === 'input') testCode += `  await ${locName}.fill('${e.value}');\n`;
+        else if (e.type === 'check') testCode += `  await ${locName}.setChecked(${e.checked});\n`;
+        else if (e.type === 'assertion' && e.assertType === 'isVisible') testCode += `  await expect(${locName}).toBeVisible();\n`;
+      });
+      
+      testCode += `});`;
+      
+      return pageClass + testCode;
+    }
+    
+    function generatePOMTypeScript(events, locators) {
+      let pageClass = `import { Page, Locator } from '@playwright/test';\n\nclass PageObject {\n  readonly page: Page;\n`;
+      
+      locators.forEach((loc) => {
+        pageClass += `  readonly ${loc.name}: Locator;\n`;
+      });
+      
+      pageClass += `\n  constructor(page: Page) {\n    this.page = page;\n`;
+      
+      locators.forEach((loc, key) => {
+        const event = events.find(e => (e.css || e.xpath) === key);
+        const locatorStr = event?.playwright ? event.playwright : 
+                          loc.xpath ? `locator('xpath=${loc.xpath}')` : `locator('${loc.css}')`;
+        pageClass += `    this.${loc.name} = page.${locatorStr};\n`;
+      });
+      
+      pageClass += `  }\n}\n\n`;
+      
+      let testCode = `// Test Code\ntest('recorded test', async ({ page }) => {\n  const pageObj = new PageObject(page);\n\n`;
+      
+      events.forEach(e => {
+        const key = e.css || e.xpath;
+        const loc = locators.get(key);
+        const locName = loc ? `pageObj.${loc.name}` : 'page';
+        
+        if (e.type === 'navigation') testCode += `  await page.goto('${e.url}');\n`;
+        else if (e.type === 'click') testCode += `  await ${locName}.click();\n`;
+        else if (e.type === 'input') testCode += `  await ${locName}.fill('${e.value}');\n`;
+        else if (e.type === 'check') testCode += `  await ${locName}.setChecked(${e.checked});\n`;
+        else if (e.type === 'assertion' && e.assertType === 'isVisible') testCode += `  await expect(${locName}).toBeVisible();\n`;
+      });
+      
+      testCode += `});`;
+      
+      return pageClass + testCode;
+    }
+    
+    function generatePOMPython(events, locators) {
+      let pageClass = `class Page:\n    def __init__(self, page):\n        self.page = page\n`;
+      
+      locators.forEach((loc, key) => {
+        const event = events.find(e => (e.css || e.xpath) === key);
+        const locatorStr = event?.playwright ? event.playwright : 
+                          loc.xpath ? `locator('xpath=${loc.xpath}')` : `locator('${loc.css}')`;
+        pageClass += `        self.${loc.name} = page.${locatorStr}\n`;
+      });
+      
+      pageClass += `\n\n`;
+      
+      let testCode = `# Test Code\ndef test_recorded(page):\n    page_obj = Page(page)\n\n`;
+      
+      events.forEach(e => {
+        const key = e.css || e.xpath;
+        const loc = locators.get(key);
+        const locName = loc ? `page_obj.${loc.name}` : 'page';
+        
+        if (e.type === 'navigation') testCode += `    page.goto('${e.url}')\n`;
+        else if (e.type === 'click') testCode += `    ${locName}.click()\n`;
+        else if (e.type === 'input') testCode += `    ${locName}.fill('${e.value}')\n`;
+        else if (e.type === 'check') testCode += `    ${locName}.set_checked(${e.checked ? 'True' : 'False'})\n`;
+        else if (e.type === 'assertion' && e.assertType === 'isVisible') testCode += `    expect(${locName}).to_be_visible()\n`;
+      });
+      
+      return pageClass + testCode;
+    }
+    
+    function generatePOMJava(events, locators) {
+      let pageClass = `public class PageObject {\n    private Page page;\n`;
+      
+      locators.forEach((loc) => {
+        pageClass += `    private Locator ${loc.name};\n`;
+      });
+      
+      pageClass += `\n    public PageObject(Page page) {\n        this.page = page;\n`;
+      
+      locators.forEach((loc, key) => {
+        const event = events.find(e => (e.css || e.xpath) === key);
+        const locatorStr = event?.playwright ? event.playwright : 
+                          loc.xpath ? `locator("xpath=${loc.xpath}")` : `locator("${loc.css}")`;
+        pageClass += `        this.${loc.name} = page.${locatorStr};\n`;
+      });
+      
+      pageClass += `    }\n}\n\n`;
+      
+      let testCode = `// Test Code\n@Test\npublic void recordedTest() {\n    PageObject pageObj = new PageObject(page);\n\n`;
+      
+      events.forEach(e => {
+        const key = e.css || e.xpath;
+        const loc = locators.get(key);
+        const locName = loc ? `pageObj.${loc.name}` : 'page';
+        
+        if (e.type === 'navigation') testCode += `    page.navigate("${e.url}");\n`;
+        else if (e.type === 'click') testCode += `    ${locName}.click();\n`;
+        else if (e.type === 'input') testCode += `    ${locName}.fill("${e.value}");\n`;
+        else if (e.type === 'check') testCode += `    ${locName}.setChecked(${e.checked});\n`;
+        else if (e.type === 'assertion' && e.assertType === 'isVisible') testCode += `    assertThat(${locName}).isVisible();\n`;
+      });
+      
+      testCode += `}`;
+      
+      return pageClass + testCode;
+    }
+
+    // Pause/Resume functionality
+    pauseBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseBtn.innerHTML = '<span>▶</span><span>Resume</span>';
+        pauseBtn.className = 'btn btn-resume';
+        statusDiv.innerHTML = '<span style="width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block;"></span><span>PAUSED</span>';
+        statusDiv.className = 'status paused';
+      } else {
+        pauseBtn.innerHTML = '<span>⏸</span><span>Pause</span>';
+        pauseBtn.className = 'btn btn-pause';
+        statusDiv.innerHTML = '<span style="width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block;"></span><span>RECORDING</span>';
+        statusDiv.className = 'status';
+      }
+    });
+
+    // Stop functionality
+    stopBtn.addEventListener('click', () => {
+      isStopped = true;
+      isPaused = false;
+      pauseBtn.disabled = true;
+      pauseBtn.style.opacity = '0.5';
+      pauseBtn.style.cursor = 'not-allowed';
+      stopBtn.disabled = true;
+      stopBtn.style.opacity = '0.5';
+      stopBtn.style.cursor = 'not-allowed';
+      statusDiv.innerHTML = '<span style="width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block;"></span><span>STOPPED</span>';
+      statusDiv.className = 'status stopped';
+      
+      // Notify main process to close
+      window.postMessage({ source: 'recorder', action: 'stop' }, '*');
+    });
+
+    window.addEvent = (event) => {
+      if (isStopped || isPaused) return;
+      
+      const eventIndex = events.length;
+      events.push(event);
+      const div = document.createElement('div');
+      div.className = `event ${event.type}`;
+      div.dataset.index = eventIndex;
+      
+      const selector = event.css || event.selector || '';
+      
+      if (event.type === 'click') {
+        div.innerHTML = `<strong>Click:</strong> ${selector}`;
+      } else if (event.type === 'input') {
+        div.innerHTML = `<strong>Type:</strong> ${selector}<br><small>Value: "${event.value}"</small>`;
+      } else if (event.type === 'assertion') {
+        const assertLabel = event.assertType === 'isVisible' ? 'Visible' : 
+                           event.assertType === 'isEnabled' ? 'Enabled' :
+                           event.assertType === 'hasValue' ? `Value: "${event.value}"` :
+                           `Text: "${event.value}"`;
+        div.innerHTML = `<strong>Assert:</strong> ${selector}<br><small>${assertLabel}</small>`;
+      } else if (event.type === 'navigation') {
+        div.innerHTML = `<strong>Navigate:</strong> ${event.url}`;
+      } else if (event.type === 'check') {
+        div.innerHTML = `<strong>Check:</strong> ${selector}<br><small>Checked: ${event.checked}</small>`;
+      } else if (event.type === 'select') {
+        div.innerHTML = `<strong>Select:</strong> ${selector}<br><small>Value: "${event.value}"</small>`;
+      } else if (event.type === 'press') {
+        div.innerHTML = `<strong>Press:</strong> ${event.key}<br><small>On: ${selector}</small>`;
+      } else if (event.type === 'submit') {
+        div.innerHTML = `<strong>Submit:</strong> ${selector}`;
+      } else if (event.type === 'dblclick') {
+        div.innerHTML = `<strong>Double Click:</strong> ${selector}`;
+      } else if (event.type === 'hover') {
+        div.innerHTML = `<strong>Hover:</strong> ${selector}`;
+      }
+      
+      if (event.xpath) {
+        const xpathSpan = document.createElement('small');
+        xpathSpan.style.color = '#858585';
+        xpathSpan.style.display = 'block';
+        xpathSpan.style.marginTop = '4px';
+        xpathSpan.textContent = `XPath: ${event.xpath}`;
+        div.appendChild(xpathSpan);
+      }
+      
+      // Add delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '🗑️';
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        const index = parseInt(div.dataset.index);
+        events[index] = null; // Mark as deleted
+        div.remove();
+        countSpan.textContent = `${events.filter(e => e !== null).length} events`;
+        updateCode();
+      };
+      div.appendChild(deleteBtn);
+      
+      eventsDiv.appendChild(div);
+      eventsDiv.scrollTop = eventsDiv.scrollHeight;
+      countSpan.textContent = `${events.length} events`;
+      
+      updateCode();
+    };
+
+    window.getRecordedEvents = () => events;
+    window.getRecorderState = () => ({ isPaused, isStopped });
+  </script>
+</body>
+</html>

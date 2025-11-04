@@ -1,0 +1,19 @@
+{
+  "name": "cli_test_recorder",
+  "version": "1.0.0",
+  "description": "CLI-based web recorder for Playwright and Selenium",
+  "main": "bin/recorder.js",
+  "bin": {
+    "recorder": "./bin/recorder.js"
+  },
+  "scripts": {
+    "start": "node ./bin/recorder.js"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "type": "click",
+    "css": "[name=\"q\"]",
+    "xpath": "//*[@name=\"q\"]",
+    "timestamp": 1762292193393
+  },
+  {
+    "type": "input",
+    "css": "[name=\"q\"]",
+    "xpath": "//*[@name=\"q\"]",
+    "value": "afsar",
+    "timestamp": 1762292199720
+  },
+  {
+    "type": "click",
+    "css": "[role=\"link\"]",
+    "xpath": "//*[@role=\"link\"]",
+    "playwright": "getByRole('link', { name: 'afsar by dr abhimanyu kumawati' })",
+    "timestamp": 1762292200077
+  },
+  {
+    "type": "navigation",
+    "url": "https://www.flipkart.com/search?q=afsar+by+dr+abhimanyu+kumawat&sid=bks&as=on&as-show=on&otracker=AS_QueryStore_OrganicAutoSuggest_1_5_na_na_na&otracker1=AS_QueryStore_OrganicAutoSuggest_1_5_na_na_na&as-pos=1&as-type=RECENT&suggestionId=afsar+by+dr+abhimanyu+kumawat%7CBooks&requestId=54a65c3e-2a8f-4b7b-a121-e1bd4e8540c6&as-searchtext=afsar",
+    "timestamp": 1762292200537
+  },
+  {
+    "type": "click",
+    "xpath": "//*[@role=\"link\"]",
+    "timestamp": 1762292216192
+  },
+  {
+    "type": "assertion",
+    "css": "a.CDJO0- > span:nth-of-type(1)",
+    "assertType": "isVisible",
+    "value": "",
+    "timestamp": 1762292226036
+  },
+  {
+    "type": "navigation",
+    "url": "https://www.flipkart.com/communication-preferences/push?t=all",
+    "timestamp": 1762292300839
+  },
+  {
+    "type": "click",
+    "css": "[role=\"link\"]",
+    "xpath": "//*[@role=\"link\"]",
+    "playwright": "getByRole('link', { name: 'Notification Preferences' })",
+    "timestamp": 1762292300803
+  },
+  {
+    "type": "click",
+    "css": "ul > li:nth-of-type(1)",
+    "xpath": "//div[1]/ul[1]/li[1]",
+    "timestamp": 1762292314642
+  },
+  {
+    "type": "click",
+    "css": "ul > li:nth-of-type(1)",
+    "xpath": "//div[1]/ul[1]/li[1]",
+    "timestamp": 1762292314642
+  },
+  {
+    "type": "click",
+    "css": ".menu-item",
+    "xpath": "//*[contains(@class, \"menu-item\")]",
+    "playwright": "locator('.menu-item').filter({ hasText: '👁️ Assert Visible' })",
+    "timestamp": 1762292322495
+  },
+  {
+    "type": "assertion",
+    "css": "ul > li:nth-of-type(2)",
+    "xpath": null,
+    "assertType": "isVisible",
+    "value": "",
+    "timestamp": 1762292322495
+  },
+  {
+    "type": "click",
+    "css": ".menu-item",
+    "xpath": "//*[contains(@class, \"menu-item\")]",
+    "playwright": "locator('.menu-item').filter({ hasText: '✅ Assert Enabled' })",
+    "timestamp": 1762292343492
+  },
+  {
+    "type": "assertion",
+    "css": "span:has-text(\"Electronics\")",
+    "xpath": null,
+    "assertType": "isEnabled",
+    "value": "",
+    "timestamp": 1762292343492
+  }
+]
