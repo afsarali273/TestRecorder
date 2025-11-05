@@ -58,7 +58,13 @@
     }
     .controls {
       display: flex;
-      gap: 12px;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .controls-group {
+      display: flex;
+      gap: 8px;
       align-items: center;
     }
     .status {
@@ -89,17 +95,21 @@
       animation: none;
     }
     .btn {
-      padding: 10px 20px;
+      padding: 8px 16px;
       border: none;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+    .btn-scan {
+      padding: 8px 14px;
     }
     .btn:hover {
       transform: translateY(-2px);
@@ -119,6 +129,158 @@
     .btn-stop {
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       color: white;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(78, 201, 176, 0.3);
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 2px solid rgba(78, 201, 176, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #4ec9b0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #e4e4e7;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+    .modal-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-body::-webkit-scrollbar {
+      width: 8px;
+    }
+    .modal-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .modal-body::-webkit-scrollbar-thumb {
+      background: rgba(78, 201, 176, 0.3);
+      border-radius: 4px;
+    }
+    .element-item {
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(45, 45, 60, 0.6);
+      border-radius: 8px;
+      border-left: 3px solid #4ec9b0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .element-item:hover {
+      background: rgba(45, 45, 60, 0.9);
+      transform: translateX(4px);
+    }
+    .element-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .element-info {
+      flex: 1;
+      font-size: 13px;
+    }
+    .element-type {
+      color: #4ec9b0;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .element-locator {
+      color: #a1a1aa;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 2px solid rgba(78, 201, 176, 0.2);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .modal-btn-primary {
+      background: linear-gradient(135deg, #4ec9b0 0%, #3a9d88 100%);
+      color: white;
+    }
+    .modal-btn-secondary {
+      background: rgba(107, 114, 128, 0.3);
+      color: #e4e4e7;
+    }
+    .modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .select-controls {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+    }
+    .select-btn {
+      padding: 8px 16px;
+      background: rgba(78, 201, 176, 0.1);
+      border: 1px solid rgba(78, 201, 176, 0.3);
+      border-radius: 6px;
+      color: #4ec9b0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .select-btn:hover {
+      background: rgba(78, 201, 176, 0.2);
     }
     .container {
       flex: 1;
@@ -363,14 +525,26 @@
       <div class="count" id="count">0 events</div>
     </div>
     <div class="controls">
-      <button class="btn btn-pause" id="pauseBtn">
-        <span>⏸</span>
-        <span>Pause</span>
-      </button>
-      <button class="btn btn-stop" id="stopBtn">
-        <span>⏹</span>
-        <span>Stop</span>
-      </button>
+      <div class="controls-group">
+        <button class="btn btn-scan" id="scanBtn" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+          <span>🔍</span>
+          <span>Scan</span>
+        </button>
+        <button class="btn btn-scan" id="scanSectionBtn" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white;">
+          <span>🎯</span>
+          <span>Section</span>
+        </button>
+      </div>
+      <div class="controls-group">
+        <button class="btn btn-pause" id="pauseBtn">
+          <span>⏸</span>
+          <span>Pause</span>
+        </button>
+        <button class="btn btn-stop" id="stopBtn">
+          <span>⏹</span>
+          <span>Stop</span>
+        </button>
+      </div>
       <div class="status" id="status">
         <span style="width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block;"></span>
         <span>RECORDING</span>
@@ -416,6 +590,28 @@
         <div class="code-panel" id="pom-code">
           <pre id="pom-pre">// Interact with the page to see generated code...</pre>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scan Page Modal -->
+  <div class="modal-overlay" id="scanModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">🔍 Page Elements Scanner</div>
+        <button class="modal-close" id="closeModal">×</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="select-controls">
+          <button class="select-btn" id="selectAllBtn">Select All</button>
+          <button class="select-btn" id="deselectAllBtn">Deselect All</button>
+          <span style="color: #a1a1aa; font-size: 12px; margin-left: auto; align-self: center;" id="elementCount">0 elements found</span>
+        </div>
+        <div id="elementsList"></div>
+      </div>
+      <div class="modal-footer" id="modalFooter">
+        <button type="button" class="modal-btn modal-btn-secondary" id="cancelScan">Cancel</button>
+        <button type="button" class="modal-btn modal-btn-primary" id="generatePOM">Generate POM (Java)</button>
       </div>
     </div>
   </div>
@@ -978,6 +1174,309 @@
       // Notify main process to close
       window.postMessage({ source: 'recorder', action: 'stop' }, '*');
     });
+
+    let scannedElements = [];
+
+    // Scan Page functionality
+    document.getElementById('scanBtn').addEventListener('click', async () => {
+      if (window.requestScan) {
+        try {
+          const elements = await window.requestScan();
+          window.showScanResults(elements);
+        } catch (err) {
+          alert('Failed to scan page: ' + err.message);
+        }
+      } else {
+        alert('Scan function not available. Please ensure the page is loaded.');
+      }
+    });
+
+    // Scan Section functionality
+    document.getElementById('scanSectionBtn').addEventListener('click', async () => {
+      if (window.requestScanSection) {
+        try {
+          await window.requestScanSection();
+        } catch (err) {
+          alert('Failed to start section scan: ' + err.message);
+        }
+      } else {
+        alert('Scan function not available. Please ensure the page is loaded.');
+      }
+    });
+
+    window.showScanResults = (elements) => {
+      scannedElements = elements;
+      const elementsList = document.getElementById('elementsList');
+      const elementCount = document.getElementById('elementCount');
+      
+      elementCount.textContent = `${elements.length} elements found`;
+      
+      elementsList.innerHTML = elements.map((el, idx) => `
+        <div class="element-item">
+          <input type="checkbox" class="element-checkbox" data-index="${idx}" checked>
+          <div class="element-info">
+            <div class="element-type">${el.type} - ${el.name}</div>
+            <div class="element-locator">${el.locator}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      document.getElementById('scanModal').classList.add('active');
+    };
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      document.getElementById('scanModal').classList.remove('active');
+    });
+
+    document.getElementById('cancelScan').addEventListener('click', () => {
+      document.getElementById('scanModal').classList.remove('active');
+    });
+
+    document.getElementById('selectAllBtn').addEventListener('click', () => {
+      document.querySelectorAll('.element-checkbox').forEach(cb => cb.checked = true);
+    });
+
+    document.getElementById('deselectAllBtn').addEventListener('click', () => {
+      document.querySelectorAll('.element-checkbox').forEach(cb => cb.checked = false);
+    });
+
+    document.getElementById('generatePOM').addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const selected = [];
+      document.querySelectorAll('.element-checkbox').forEach((cb, idx) => {
+        if (cb.checked) selected.push(scannedElements[idx]);
+      });
+      
+      if (selected.length === 0) {
+        alert('Please select at least one element');
+        return;
+      }
+      
+      try {
+        const playwrightPOM = generatePlaywrightPOMJava(selected);
+        const seleniumPOM = generateSeleniumPOMJava(selected);
+        
+        await navigator.clipboard.writeText(playwrightPOM);
+        
+        const seleniumNormalPOM = generateSeleniumNormalPOMJava(selected);
+        
+        // Show generated code with tabs
+        document.getElementById('modalTitle').innerHTML = '🎭 Generated Page Object Model (Java)';
+        document.getElementById('modalBody').innerHTML = `
+          <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid rgba(78, 201, 176, 0.2);">
+            <button class="pom-tab active" data-pom="playwright" style="padding: 10px 20px; background: rgba(78, 201, 176, 0.1); border: none; border-bottom: 3px solid #4ec9b0; color: #4ec9b0; cursor: pointer; font-size: 13px; font-weight: 600;">🎭 Playwright POM</button>
+            <button class="pom-tab" data-pom="selenium" style="padding: 10px 20px; background: transparent; border: none; border-bottom: 3px solid transparent; color: #a1a1aa; cursor: pointer; font-size: 13px; font-weight: 600;">🔧 Selenium POM</button>
+          </div>
+          <div id="seleniumSwitch" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: rgba(78, 201, 176, 0.05); border-radius: 6px; border: 1px solid rgba(78, 201, 176, 0.2);">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
+              <input type="checkbox" id="seleniumPatternToggle" style="width: 16px; height: 16px; cursor: pointer;">
+              <span>Use PageFactory Pattern (@FindBy)</span>
+            </label>
+          </div>
+          <div style="position: relative;">
+            <button id="copyPomBtn" style="position: absolute; top: 10px; right: 10px; padding: 8px 16px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; z-index: 1;">📋 Copy Code</button>
+            <pre id="playwrightPomCode" class="pom-code-panel" style="background: rgba(15, 15, 35, 0.9); padding: 20px; border-radius: 8px; overflow-x: auto; max-height: 55vh; margin: 0; color: #e4e4e7; font-size: 12px; line-height: 1.6;">${playwrightPOM.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+            <pre id="seleniumPomCode" class="pom-code-panel" style="display: none; background: rgba(15, 15, 35, 0.9); padding: 20px; border-radius: 8px; overflow-x: auto; max-height: 55vh; margin: 0; color: #e4e4e7; font-size: 12px; line-height: 1.6;">${seleniumNormalPOM.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          </div>
+        `;
+        document.getElementById('modalFooter').innerHTML = '<button type="button" class="modal-btn modal-btn-primary" id="closePomModal">Close</button>';
+        
+        document.getElementById('closePomModal').addEventListener('click', () => {
+          document.getElementById('scanModal').classList.remove('active');
+          // Reset modal for next scan
+          document.getElementById('modalTitle').innerHTML = '🔍 Page Elements Scanner';
+          document.getElementById('modalBody').innerHTML = `
+            <div class="select-controls">
+              <button class="select-btn" id="selectAllBtn">Select All</button>
+              <button class="select-btn" id="deselectAllBtn">Deselect All</button>
+              <span style="color: #a1a1aa; font-size: 12px; margin-left: auto; align-self: center;" id="elementCount">0 elements found</span>
+            </div>
+            <div id="elementsList"></div>
+          `;
+          document.getElementById('modalFooter').innerHTML = `
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelScan">Cancel</button>
+            <button type="button" class="modal-btn modal-btn-primary" id="generatePOM">Generate POM (Java)</button>
+          `;
+          
+          // Re-attach event listeners
+          document.getElementById('cancelScan').addEventListener('click', () => {
+            document.getElementById('scanModal').classList.remove('active');
+          });
+          
+          document.getElementById('selectAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('.element-checkbox').forEach(cb => cb.checked = true);
+          });
+          
+          document.getElementById('deselectAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('.element-checkbox').forEach(cb => cb.checked = false);
+          });
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.pom-tab').forEach(tab => {
+          tab.addEventListener('click', function() {
+            document.querySelectorAll('.pom-tab').forEach(t => {
+              t.style.background = 'transparent';
+              t.style.borderBottom = '3px solid transparent';
+              t.style.color = '#a1a1aa';
+            });
+            this.style.background = 'rgba(78, 201, 176, 0.1)';
+            this.style.borderBottom = '3px solid #4ec9b0';
+            this.style.color = '#4ec9b0';
+            
+            const pomType = this.dataset.pom;
+            document.querySelectorAll('.pom-code-panel').forEach(p => p.style.display = 'none');
+            document.getElementById(pomType + 'PomCode').style.display = 'block';
+            
+            // Show/hide selenium switch
+            if (pomType === 'selenium') {
+              document.getElementById('seleniumSwitch').style.display = 'block';
+            } else {
+              document.getElementById('seleniumSwitch').style.display = 'none';
+            }
+          });
+        });
+        
+        // Selenium pattern toggle
+        const seleniumFactoryPOM = `${seleniumPOM.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
+        const seleniumNormalPOMEscaped = `${seleniumNormalPOM.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
+        
+        document.getElementById('seleniumPatternToggle').addEventListener('change', function() {
+          const seleniumCodePanel = document.getElementById('seleniumPomCode');
+          if (this.checked) {
+            seleniumCodePanel.innerHTML = seleniumFactoryPOM;
+          } else {
+            seleniumCodePanel.innerHTML = seleniumNormalPOMEscaped;
+          }
+        });
+        
+        // Copy button
+        document.getElementById('copyPomBtn').addEventListener('click', function() {
+          const activePanel = document.querySelector('.pom-code-panel[style*="display: block"], .pom-code-panel:not([style*="display: none"])');
+          navigator.clipboard.writeText(activePanel.textContent);
+          this.textContent = '✅ Copied!';
+          setTimeout(() => this.textContent = '📋 Copy Code', 1500);
+        });
+      } catch (err) {
+        alert('❌ Error generating POM: ' + err.message);
+        console.error('POM Generation Error:', err);
+      }
+    });
+
+    function generatePlaywrightPOMJava(elements) {
+      let code = `import com.microsoft.playwright.*;\nimport java.util.List;\n\npublic class PageObject {\n    private Page page;\n\n`;
+      
+      elements.forEach(el => {
+        if (el.isList) {
+          code += `    private List<Locator> ${el.varName};\n`;
+        } else {
+          code += `    private Locator ${el.varName};\n`;
+        }
+      });
+      
+      code += `\n    public PageObject(Page page) {\n        this.page = page;\n`;
+      
+      elements.forEach(el => {
+        const locatorStr = el.playwright || (el.css ? `locator("${el.css}")` : `locator("xpath=${el.xpath}")`);
+        if (el.isList) {
+          code += `        this.${el.varName} = page.${locatorStr}.all();\n`;
+        } else {
+          code += `        this.${el.varName} = page.${locatorStr};\n`;
+        }
+      });
+      
+      code += `    }\n\n`;
+      
+      elements.forEach(el => {
+        const methodName = el.varName.charAt(0).toUpperCase() + el.varName.slice(1);
+        if (el.isList) {
+          code += `    public List<Locator> get${methodName}() {\n        return ${el.varName};\n    }\n\n`;
+        } else {
+          code += `    public Locator get${methodName}() {\n        return ${el.varName};\n    }\n\n`;
+        }
+      });
+      
+      code += `}`;
+      return code;
+    }
+
+    function generateSeleniumNormalPOMJava(elements) {
+      let code = 'import org.openqa.selenium.*;\nimport java.util.List;\n\npublic class SeleniumPageObject {\n    private WebDriver driver;\n\n';
+      
+      elements.forEach(el => {
+        let locatorType, locatorValue;
+        
+        // Prefer XPath if CSS is not unique or not available
+        if (el.xpath && !el.css) {
+          locatorType = 'By.xpath';
+          locatorValue = el.xpath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        } else if (el.css) {
+          locatorType = 'By.cssSelector';
+          locatorValue = el.css.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        } else {
+          locatorType = 'By.xpath';
+          locatorValue = (el.xpath || el.locator || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+        
+        code += '    private By ' + el.varName + ' = ' + locatorType + '("' + locatorValue + '");\n';
+      });
+      
+      code += '\n    public SeleniumPageObject(WebDriver driver) {\n        this.driver = driver;\n    }\n\n';
+      
+      elements.forEach(el => {
+        const methodName = el.varName.charAt(0).toUpperCase() + el.varName.slice(1);
+        if (el.isList) {
+          code += '    public List<WebElement> get' + methodName + '() {\n        return driver.findElements(' + el.varName + ');\n    }\n\n';
+        } else {
+          code += '    public WebElement get' + methodName + '() {\n        return driver.findElement(' + el.varName + ');\n    }\n\n';
+        }
+      });
+      
+      code += '}';
+      return code;
+    }
+
+    function generateSeleniumPOMJava(elements) {
+      let code = 'import org.openqa.selenium.*;\nimport org.openqa.selenium.support.FindBy;\nimport org.openqa.selenium.support.FindBys;\nimport org.openqa.selenium.support.PageFactory;\nimport java.util.List;\n\npublic class SeleniumPageObject {\n    private WebDriver driver;\n\n';
+      
+      elements.forEach(el => {
+        let locatorType, locatorValue;
+        
+        // Prefer XPath if CSS is not unique or not available
+        if (el.xpath && !el.css) {
+          locatorType = 'xpath';
+          locatorValue = el.xpath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        } else if (el.css) {
+          locatorType = 'css';
+          locatorValue = el.css.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        } else {
+          locatorType = 'xpath';
+          locatorValue = (el.xpath || el.locator || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+        
+        if (el.isList) {
+          code += '    @FindBy(' + locatorType + ' = "' + locatorValue + '")\n    private List<WebElement> ' + el.varName + ';\n\n';
+        } else {
+          code += '    @FindBy(' + locatorType + ' = "' + locatorValue + '")\n    private WebElement ' + el.varName + ';\n\n';
+        }
+      });
+      
+      code += '    public SeleniumPageObject(WebDriver driver) {\n        this.driver = driver;\n        PageFactory.initElements(driver, this);\n    }\n\n';
+      
+      elements.forEach(el => {
+        const methodName = el.varName.charAt(0).toUpperCase() + el.varName.slice(1);
+        if (el.isList) {
+          code += '    public List<WebElement> get' + methodName + '() {\n        return ' + el.varName + ';\n    }\n\n';
+        } else {
+          code += '    public WebElement get' + methodName + '() {\n        return ' + el.varName + ';\n    }\n\n';
+        }
+      });
+      
+      code += '}';
+      return code;
+    }
 
     window.addEvent = (event) => {
       if (isStopped || isPaused) return;

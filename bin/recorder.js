@@ -57,11 +57,23 @@ const argv = yargs.option('url', { type: 'string', demandOption: true })
       const hasFunction = await targetPage.evaluate(() => typeof window.sendToRecorder === 'function').catch(() => false);
       
       if (!hasFunction) {
-        await targetPage.exposeFunction('sendToRecorder', async (event) => {
+        await targetPage.exposeFunction('sendToRecorder', async (data) => {
           try {
-            await recorderPage.evaluate((evt) => {
-              window.addEvent(evt);
-            }, event);
+            if (data.action === 'scanResults') {
+              await recorderPage.evaluate((elements) => {
+                if (window.showScanResults) {
+                  window.showScanResults(elements);
+                }
+              }, data.elements);
+            } else if (data.event) {
+              await recorderPage.evaluate((evt) => {
+                window.addEvent(evt);
+              }, data.event);
+            } else {
+              await recorderPage.evaluate((evt) => {
+                window.addEvent(evt);
+              }, data);
+            }
           } catch (err) {
             // Ignore if recorder page is closed
           }
@@ -101,6 +113,24 @@ const argv = yargs.option('url', { type: 'string', demandOption: true })
       }
     });
   };
+
+  // Expose scan functions to recorder UI
+  await recorderPage.exposeFunction('requestScan', async () => {
+    return await page.evaluate(() => {
+      if (typeof scanPageElements === 'function') {
+        return scanPageElements();
+      }
+      return [];
+    });
+  }).catch(() => {});
+  
+  await recorderPage.exposeFunction('requestScanSection', async () => {
+    return await page.evaluate(() => {
+      if (typeof window.startSectionScan === 'function') {
+        window.startSectionScan();
+      }
+    });
+  }).catch(() => {});
 
   // Open target page
   await page.goto(argv.url);

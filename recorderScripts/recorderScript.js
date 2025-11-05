@@ -674,6 +674,8 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 13px;
     min-width: 200px;
+    max-height: 80vh;
+    overflow-y: auto;
   `;
   document.body.appendChild(contextMenu);
 
@@ -718,8 +720,9 @@
     }).join('');
     
     contextMenu.innerHTML = `
-      <div style="padding: 8px; background: #1e1e1e; color: #4ec9b0; font-weight: 600; border-bottom: 1px solid #3e3e42;">
-        Actions & Assertions
+      <div style="padding: 8px 16px; background: #1e1e1e; color: #4ec9b0; font-weight: 600; border-bottom: 1px solid #3e3e42; display: flex; justify-content: space-between; align-items: center;">
+        <span>Actions & Assertions</span>
+        <button class="context-close" style="background: none; border: none; color: #e4e4e7; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;">×</button>
       </div>
       <div style="padding: 4px 0;">
         <div class="menu-section" style="padding: 4px 12px; color: #858585; font-size: 11px; font-weight: 600;">LOCATORS</div>
@@ -784,6 +787,23 @@
       });
     });
 
+    // Close button handler
+    const closeBtn = contextMenu.querySelector('.context-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+        closeBtn.style.color = '#ef4444';
+      });
+      closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.background = 'none';
+        closeBtn.style.color = '#e4e4e7';
+      });
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        contextMenu.style.display = 'none';
+      });
+    }
+    
     // Add hover effects
     contextMenu.querySelectorAll('.menu-item').forEach(item => {
       item.addEventListener('mouseenter', () => {
@@ -895,4 +915,481 @@
       contextMenu.style.display = 'none';
     }
   });
+
+  function scanPageElements() {
+    const elements = [];
+    const seen = new Set();
+    const locatorMap = new Map(); // Track used locators
+    
+    // Priority selectors
+    const prioritySelectors = [
+      '[data-testid]', '[data-test]', '[data-automation-id]', '[automation-id]',
+      'input:not([type="hidden"])', 'button', 'textarea', 'select',
+      '[role="button"]', '[role="navigation"]', '[role="menu"]', '[role="menuitem"]',
+      'a[href]', '[role="link"]',
+      'nav a', 'nav button',
+      '[id]:not([id=""])',
+      'form', 'table',
+      '[role="dialog"]', '[role="alert"]',
+      'h1, h2, h3'
+    ];
+    
+    prioritySelectors.forEach(selector => {
+      try {
+        document.querySelectorAll(selector).forEach((el) => {
+          if (seen.has(el)) return;
+          if (!isElementValid(el)) return;
+          
+          const allSels = getAllSelectors(el);
+          if (allSels.length === 0) return;
+          
+          const best = allSels[0];
+          const elementData = createElementData(el, best, elements.length, locatorMap);
+          if (elementData) {
+            elements.push(elementData);
+            seen.add(el);
+          }
+        });
+      } catch (e) {}
+    });
+    
+    return elements;
+  }
+  
+  function isElementValid(el) {
+    // Skip hidden elements
+    if (!el.offsetParent && el.tagName !== 'INPUT') return false;
+    
+    // Skip images unless they have important attributes
+    if (el.tagName === 'IMG' && !el.getAttribute('data-testid') && !el.id) return false;
+    
+    // Skip SVG and icons unless they have role or data attributes
+    if ((el.tagName === 'SVG' || el.tagName === 'I') && !el.getAttribute('role') && !el.getAttribute('data-testid')) return false;
+    
+    // Skip elements with dynamic classes only
+    if (el.className && typeof el.className === 'string' && hasMinifiedClasses(el.className) && !el.id && !el.getAttribute('data-testid')) return false;
+    
+    // Skip script, style, meta tags
+    if (['SCRIPT', 'STYLE', 'META', 'LINK', 'NOSCRIPT'].includes(el.tagName)) return false;
+    
+    return true;
+  }
+  
+  function buildAccurateCssSelector(el) {
+    // Try to build CSS selector using parent/grandparent context
+    const tag = el.tagName.toLowerCase();
+    
+    // Check if element has unique ID
+    if (el.id && !isDynamic(el.id)) {
+      return `#${el.id}`;
+    }
+    
+    // Check for data-testid or other test attributes
+    if (el.getAttribute('data-testid') && !isDynamic(el.getAttribute('data-testid'))) {
+      return `[data-testid="${el.getAttribute('data-testid')}"]`;
+    }
+    
+    // Check for unique name attribute
+    if (el.getAttribute('name') && !isDynamic(el.getAttribute('name'))) {
+      const name = el.getAttribute('name');
+      if (document.querySelectorAll(`[name="${name}"]`).length === 1) {
+        return `[name="${name}"]`;
+      }
+    }
+    
+    // Try to find parent with unique identifier
+    let current = el;
+    let path = [];
+    let depth = 0;
+    
+    while (current && current !== document.body && depth < 4) {
+      const currentTag = current.tagName.toLowerCase();
+      let selector = currentTag;
+      
+      // Add ID if present and not dynamic
+      if (current.id && !isDynamic(current.id)) {
+        selector = `#${current.id}`;
+        path.unshift(selector);
+        break; // Found unique parent, stop here
+      }
+      
+      // Add data-testid if present
+      if (current.getAttribute('data-testid') && !isDynamic(current.getAttribute('data-testid'))) {
+        selector = `[data-testid="${current.getAttribute('data-testid')}"]`;
+        path.unshift(selector);
+        break; // Found unique parent, stop here
+      }
+      
+      // Add stable class if available
+      if (current.className && typeof current.className === 'string') {
+        const classes = current.className.split(' ').filter(c => c && !isDynamic(c) && !c.match(/^(active|hover|focus|selected|disabled|open|closed|visible|hidden)$/i));
+        if (classes.length > 0) {
+          selector = `${currentTag}.${classes[0]}`;
+        }
+      }
+      
+      // Add nth-of-type if needed for specificity
+      if (current !== el && current.parentElement) {
+        const siblings = Array.from(current.parentElement.children).filter(c => c.tagName === current.tagName);
+        if (siblings.length > 1) {
+          const index = siblings.indexOf(current) + 1;
+          selector += `:nth-of-type(${index})`;
+        }
+      }
+      
+      path.unshift(selector);
+      current = current.parentElement;
+      depth++;
+    }
+    
+    // Build final selector
+    let finalSelector = path.join(' > ');
+    
+    // Verify uniqueness
+    try {
+      const matches = document.querySelectorAll(finalSelector);
+      if (matches.length === 1) {
+        return finalSelector;
+      }
+    } catch (e) {}
+    
+    return null;
+  }
+  
+  function createElementData(el, best, idx, locatorMap) {
+    locatorMap = locatorMap || new Map();
+    const type = el.tagName.toLowerCase();
+    const text = el.textContent?.trim().substring(0, 30) || el.placeholder || el.value || '';
+    const name = generateElementName(el, idx);
+    
+    // Determine if it should be a List<WebElement>
+    const isList = shouldBeList(el, best);
+    
+    // For Playwright: always use advanced locators (getByRole, getByTestId, etc.)
+    let finalPlaywright = best.playwright || `locator("${best.css || 'xpath=' + best.xpath}")`;
+    
+    // For Selenium: build accurate CSS selector or use XPath
+    let finalCss = best.css;
+    let finalXpath = best.xpath;
+    
+    if (!isList) {
+      const locatorKey = finalCss || finalXpath;
+      
+      // Check if this locator was already used OR if it matches multiple elements
+      const isDuplicate = locatorMap.has(locatorKey);
+      const matchCount = finalCss ? document.querySelectorAll(finalCss).length : 0;
+      
+      if (isDuplicate || matchCount > 1) {
+        // Try to build accurate CSS selector using parent context
+        const accurateCss = buildAccurateCssSelector(el);
+        
+        if (accurateCss && !locatorMap.has(accurateCss)) {
+          finalCss = accurateCss;
+          finalXpath = null;
+        } else {
+          // Try to find a unique selector from all available selectors
+          const allSels = getAllSelectors(el);
+          const uniqueSel = allSels.find(s => {
+            try {
+              if (s.css && !locatorMap.has(s.css)) {
+                const count = document.querySelectorAll(s.css).length;
+                return count === 1;
+              }
+            } catch (e) {}
+            return false;
+          });
+          
+          if (uniqueSel) {
+            finalCss = uniqueSel.css;
+            finalXpath = uniqueSel.xpath;
+          } else {
+            // Use XPath as fallback for uniqueness (Selenium only)
+            finalCss = null;
+            finalXpath = generateUniqueXPath(el);
+          }
+        }
+      }
+      
+      // Mark this locator as used
+      locatorMap.set(finalCss || finalXpath, true);
+    }
+    
+    return {
+      type: isList ? `List<${type}>` : type,
+      name: text || type,
+      varName: name,
+      locator: finalCss || finalXpath,
+      css: finalCss,
+      xpath: finalXpath,
+      playwright: finalPlaywright,
+      isList
+    };
+  }
+  
+  function generateUniqueXPath(el) {
+    if (el.id && !isDynamic(el.id)) {
+      return `//*[@id="${el.id}"]`;
+    }
+    
+    const text = el.textContent?.trim();
+    if (text && text.length < 50) {
+      const tag = el.tagName.toLowerCase();
+      return `//${tag}[normalize-space(text())="${text.replace(/"/g, '&quot;')}"]`;
+    }
+    
+    // Build positional XPath
+    let path = '';
+    let current = el;
+    
+    while (current && current.nodeType === Node.ELEMENT_NODE) {
+      let index = 0;
+      let sibling = current.previousSibling;
+      
+      while (sibling) {
+        if (sibling.nodeType === Node.ELEMENT_NODE && sibling.nodeName === current.nodeName) {
+          index++;
+        }
+        sibling = sibling.previousSibling;
+      }
+      
+      const tagName = current.nodeName.toLowerCase();
+      const pathIndex = index > 0 ? `[${index + 1}]` : '';
+      path = `/${tagName}${pathIndex}${path}`;
+      
+      current = current.parentNode;
+      
+      if (current === document.body) break;
+    }
+    
+    return path || '//*';
+  }
+  
+  function shouldBeList(el, best) {
+    // Check if selector matches multiple elements
+    const selector = best.css || best.xpath;
+    let matchCount = 0;
+    
+    try {
+      if (best.css) {
+        matchCount = document.querySelectorAll(best.css).length;
+      } else if (best.xpath) {
+        const result = document.evaluate(best.xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        matchCount = result.snapshotLength;
+      }
+    } catch (e) {
+      return false;
+    }
+    
+    // If matches multiple similar elements, make it a list
+    if (matchCount > 1) {
+      // Check if they're similar elements (same tag, similar purpose)
+      if (el.tagName === 'A' || el.tagName === 'BUTTON' || el.tagName === 'LI') {
+        return true;
+      }
+      // Navigation items, menu items
+      if (el.closest('nav') || el.getAttribute('role') === 'menuitem') {
+        return true;
+      }
+      // Table rows/cells
+      if (el.tagName === 'TR' || el.tagName === 'TD') {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  function generateElementName(el, idx) {
+    const tag = el.tagName.toLowerCase();
+    let baseName = '';
+    let prefix = '';
+    
+    // Determine prefix based on element type
+    if (tag === 'button' || el.getAttribute('role') === 'button') {
+      prefix = 'btn';
+    } else if (tag === 'a' || el.getAttribute('role') === 'link') {
+      prefix = 'lnk';
+    } else if (tag === 'input') {
+      const type = el.getAttribute('type') || 'text';
+      if (type === 'text' || type === 'email' || type === 'password' || type === 'search') {
+        prefix = 'txt';
+      } else if (type === 'checkbox') {
+        prefix = 'chk';
+      } else if (type === 'radio') {
+        prefix = 'rdo';
+      } else if (type === 'submit') {
+        prefix = 'btn';
+      } else {
+        prefix = 'inp';
+      }
+    } else if (tag === 'select') {
+      prefix = 'ddl';
+    } else if (tag === 'textarea') {
+      prefix = 'txt';
+    } else if (tag === 'form') {
+      prefix = 'frm';
+    } else if (tag === 'table') {
+      prefix = 'tbl';
+    } else if (tag === 'nav' || el.getAttribute('role') === 'navigation') {
+      prefix = 'nav';
+    } else if (el.getAttribute('role') === 'dialog') {
+      prefix = 'dlg';
+    } else if (el.getAttribute('role') === 'menu' || el.getAttribute('role') === 'menuitem') {
+      prefix = 'mnu';
+    } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+      prefix = 'hdr';
+    } else if (tag === 'img') {
+      prefix = 'img';
+    } else {
+      prefix = 'elm';
+    }
+    
+    // Extract meaningful name
+    const testid = el.getAttribute('data-testid');
+    if (testid && !isDynamic(testid)) {
+      baseName = testid.replace(/-/g, '_');
+    } else if (el.id && !isDynamic(el.id)) {
+      baseName = el.id.replace(/-/g, '_');
+    } else if (el.getAttribute('name') && !isDynamic(el.getAttribute('name'))) {
+      baseName = el.getAttribute('name').replace(/-/g, '_');
+    } else if (el.getAttribute('aria-label')) {
+      baseName = el.getAttribute('aria-label').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    } else if (el.getAttribute('placeholder')) {
+      baseName = el.getAttribute('placeholder').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    } else if (el.getAttribute('title')) {
+      baseName = el.getAttribute('title').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    } else if (el.getAttribute('alt')) {
+      baseName = el.getAttribute('alt').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    } else {
+      const text = el.textContent?.trim();
+      if (text && text.length > 0 && text.length < 40) {
+        baseName = text.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      } else if (el.className && typeof el.className === 'string') {
+        const classes = el.className.split(' ').filter(c => c && !isDynamic(c));
+        if (classes.length > 0) {
+          baseName = classes[0].replace(/[^a-z0-9]+/g, '_');
+        }
+      }
+    }
+    
+    // Clean up base name
+    baseName = baseName.replace(/^_+|_+$/g, '').substring(0, 30);
+    
+    // If no meaningful name found, use generic with index
+    if (!baseName) {
+      baseName = tag + '_' + idx;
+      return prefix + baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    }
+    
+    // Combine prefix with base name (camelCase)
+    const finalName = prefix + baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    return finalName;
+  }
+
+  // Expose scanPageElements globally
+  window.scanPageElements = scanPageElements;
+  
+  // Section scan functionality
+  let sectionScanMode = false;
+  const sectionOverlay = document.createElement('div');
+  sectionOverlay.style.cssText = `
+    position: absolute;
+    pointer-events: none;
+    z-index: 999998;
+    background: rgba(236, 72, 153, 0.2);
+    border: 3px solid #ec4899;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.3);
+    display: none;
+  `;
+  document.body.appendChild(sectionOverlay);
+  
+  function scanSection(element) {
+    const elements = [];
+    const seen = new Set();
+    const locatorMap = new Map(); // Track used locators
+    
+    const prioritySelectors = [
+      '[data-testid]', '[data-test]', '[data-automation-id]', '[automation-id]',
+      'input:not([type="hidden"])', 'button', 'textarea', 'select',
+      '[role="button"]', '[role="navigation"]', '[role="menu"]', '[role="menuitem"]',
+      'a[href]', '[role="link"]',
+      'nav a', 'nav button',
+      '[id]:not([id=""])',
+      'form', 'table',
+      '[role="dialog"]', '[role="alert"]',
+      'h1, h2, h3'
+    ];
+    
+    prioritySelectors.forEach(selector => {
+      try {
+        element.querySelectorAll(selector).forEach((el) => {
+          if (seen.has(el)) return;
+          if (!isElementValid(el)) return;
+          
+          const allSels = getAllSelectors(el);
+          if (allSels.length === 0) return;
+          
+          const best = allSels[0];
+          const elementData = createElementData(el, best, elements.length, locatorMap);
+          if (elementData) {
+            elements.push(elementData);
+            seen.add(el);
+          }
+        });
+      } catch (e) {}
+    });
+    
+    return elements;
+  }
+  
+  window.startSectionScan = function() {
+    sectionScanMode = true;
+    document.body.style.cursor = 'crosshair';
+    
+    const hoverHandler = (e) => {
+      if (!sectionScanMode) return;
+      e.stopPropagation();
+      const rect = e.target.getBoundingClientRect();
+      sectionOverlay.style.top = (rect.top + window.scrollY) + 'px';
+      sectionOverlay.style.left = (rect.left + window.scrollX) + 'px';
+      sectionOverlay.style.width = rect.width + 'px';
+      sectionOverlay.style.height = rect.height + 'px';
+      sectionOverlay.style.display = 'block';
+    };
+    
+    const clickHandler = (e) => {
+      if (!sectionScanMode) return;
+      e.preventDefault();
+      e.stopPropagation();
+      
+      sectionScanMode = false;
+      document.body.style.cursor = '';
+      sectionOverlay.style.display = 'none';
+      highlightOverlay.style.display = 'none';
+      
+      document.removeEventListener('mouseover', hoverHandler, true);
+      document.removeEventListener('click', clickHandler, true);
+      document.removeEventListener('keydown', escapeHandler);
+      
+      const elements = scanSection(e.target);
+      window.sendToRecorder({ action: 'scanResults', elements });
+    };
+    
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape' && sectionScanMode) {
+        sectionScanMode = false;
+        document.body.style.cursor = '';
+        sectionOverlay.style.display = 'none';
+        highlightOverlay.style.display = 'none';
+        document.removeEventListener('mouseover', hoverHandler, true);
+        document.removeEventListener('click', clickHandler, true);
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    
+    highlightOverlay.style.display = 'none';
+    document.addEventListener('mouseover', hoverHandler, true);
+    document.addEventListener('click', clickHandler, true);
+    document.addEventListener('keydown', escapeHandler);
+  };
 })();
