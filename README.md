@@ -55,8 +55,8 @@ A powerful CLI-based test recorder that captures user interactions and generates
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd cli_test_recorder_updated
+git clone https://github.com/afsarali273/TestRecorder.git
+cd TestRecorder
 ```
 
 2. **Install dependencies**
