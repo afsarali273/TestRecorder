@@ -22,7 +22,7 @@ A powerful CLI-based test recorder that captures user interactions and generates
 
 ### 🌐 Multi-Framework Support
 - **Playwright** (JavaScript, TypeScript, Python, Java)
-- **Selenium** (Python with By.XPATH, By.CSS_SELECTOR)
+- **Selenium** (Python, Java with By.xpath, By.cssSelector)
 - **UFT** (VBScript with descriptive programming)
 - **Page Object Model** (All languages with meaningful variable names)
 
@@ -144,6 +144,13 @@ await expect(page.getByLabel('Email')).toBeVisible();
 driver.find_element(By.CSS_SELECTOR, "[data-testid='login-btn']").click()
 driver.find_element(By.XPATH, "//input[@name='username']").send_keys("admin")
 assert driver.find_element(By.ID, "message").is_displayed()
+```
+
+### Selenium (Java)
+```java
+driver.findElement(By.cssSelector("[data-testid='login-btn']")).click();
+driver.findElement(By.xpath("//input[@name='username']")).sendKeys("admin");
+assertTrue(driver.findElement(By.id("message")).isDisplayed());
 ```
 
 ### UFT (VBScript)
