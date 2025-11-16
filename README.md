@@ -34,13 +34,16 @@ A powerful CLI-based test recorder that captures user interactions and generates
 - Vertical layout: Events (40%) + Code (60%)
 
 ### 🔍 Advanced Features
-- Element highlighting on hover
-- Pause/Resume/Stop controls
-- Delete individual recorded steps
-- Copy generated code to clipboard
-- Navigation tracking with auto-injection
-- Form input debouncing (1-second delay)
-- Assertion support (visible, text, value, enabled)
+- **Element highlighting** on hover
+- **Pause/Resume/Stop** controls
+- **Delete individual** recorded steps
+- **Copy generated code** to clipboard
+- **Navigation tracking** with auto-injection
+- **Form input debouncing** (1-second delay)
+- **Assertion support** (visible, text, value, enabled)
+- **Page scanning** - Discover all interactive elements
+- **Section scanning** - Scan specific page sections
+- **POM generation** - Auto-generate Page Object Model classes
 
 ## 📦 Installation
 
@@ -88,6 +91,7 @@ test-recorder --url https://example.com
 
 ![Recorder UI](./img.png)
 
+### Recording Interactions
 1. **Start Recording**: Run the command with your target URL
 2. **Interact**: The recorder window opens on the right side - perform actions on the main browser
 3. **View Events**: See recorded actions in real-time in the Events panel
@@ -97,19 +101,27 @@ test-recorder --url https://example.com
 7. **Copy Code**: Click "Copy Code" button to copy generated tests
 8. **Stop**: Click Stop button or press Enter in terminal
 
+### Page Scanning & POM Generation
+1. **Scan Full Page**: Click "🔍 Scan" button to discover all interactive elements
+2. **Scan Section**: Click "🎯 Section" button, then click on any page section to scan only that area
+3. **Select Elements**: Check/uncheck elements you want in your Page Object Model
+4. **Generate POM**: Click "Generate POM (Java)" to create Page Object classes
+5. **Choose Pattern**: Toggle between Playwright POM and Selenium POM (PageFactory or normal pattern)
+6. **Copy Code**: Use the copy button to get the generated POM code
+
 ## 📋 Supported Actions
 
-| Action | Description |
-|--------|-------------|
-| **Click** | Single click on elements |
-| **Double Click** | Double click on elements |
-| **Input** | Text input with debouncing |
-| **Select** | Dropdown selection |
-| **Check/Uncheck** | Checkbox and radio buttons |
-| **Hover** | Mouse hover events |
-| **Press** | Keyboard events (Enter, etc.) |
-| **Submit** | Form submission |
-| **Navigate** | Page navigation tracking |
+| Action | Description | Playwright | Selenium |
+|--------|-------------|------------|----------|
+| **Click** | Single click on elements | `.click()` | `.click()` |
+| **Double Click** | Double click on elements | `.dblclick()` | `ActionChains.double_click()` |
+| **Input** | Text input with debouncing | `.fill()` | `.send_keys()` |
+| **Select** | Dropdown selection | `.selectOption()` | `Select().select_by_value()` |
+| **Check/Uncheck** | Checkbox and radio buttons | `.setChecked()` | `.click()` |
+| **Hover** | Mouse hover events | `.hover()` | `ActionChains.move_to_element()` |
+| **Press** | Keyboard events (Enter, etc.) | `.press()` | `.send_keys(Keys.ENTER)` |
+| **Submit** | Form submission | `.evaluate()` | `.submit()` |
+| **Navigate** | Page navigation tracking | `page.goto()` | `driver.get()` |
 
 ## 🎯 Assertions (Right-Click Menu)
 
@@ -153,6 +165,117 @@ class PageObject {
 }
 ```
 
+## 🎭 Page Object Model (POM) Generation
+
+### Features
+- **Auto-discovery**: Scans page for interactive elements (buttons, inputs, links, forms)
+- **Smart naming**: Generates meaningful variable names (btnLogin, txtUsername, lnkForgotPassword)
+- **Multiple patterns**: Supports Playwright POM and Selenium POM (PageFactory & normal)
+- **Unique locators**: Ensures each element has a unique, stable locator
+- **List detection**: Automatically creates `List<WebElement>` for multiple similar elements
+
+### Playwright POM (Java)
+```java
+import com.microsoft.playwright.*;
+import java.util.List;
+
+public class PageObject {
+    private Page page;
+    private Locator btnLogin;
+    private Locator txtUsername;
+    private List<Locator> lnkNavigation;
+    
+    public PageObject(Page page) {
+        this.page = page;
+        this.btnLogin = page.getByRole('button', { name: 'Login' });
+        this.txtUsername = page.getByPlaceholder('Enter username');
+        this.lnkNavigation = page.getByRole('link').all();
+    }
+    
+    public Locator getBtnLogin() { return btnLogin; }
+    public Locator getTxtUsername() { return txtUsername; }
+    public List<Locator> getLnkNavigation() { return lnkNavigation; }
+}
+```
+
+### Selenium POM - PageFactory Pattern (Java)
+```java
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+import java.util.List;
+
+public class SeleniumPageObject {
+    private WebDriver driver;
+    
+    @FindBy(css = "[data-testid='login-btn']")
+    private WebElement btnLogin;
+    
+    @FindBy(xpath = "//input[@placeholder='Enter username']")
+    private WebElement txtUsername;
+    
+    @FindBy(css = "nav a")
+    private List<WebElement> lnkNavigation;
+    
+    public SeleniumPageObject(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+    
+    public WebElement getBtnLogin() { return btnLogin; }
+    public WebElement getTxtUsername() { return txtUsername; }
+    public List<WebElement> getLnkNavigation() { return lnkNavigation; }
+}
+```
+
+### Selenium POM - Normal Pattern (Java)
+```java
+import org.openqa.selenium.*;
+import java.util.List;
+
+public class SeleniumPageObject {
+    private WebDriver driver;
+    private By btnLogin = By.cssSelector("[data-testid='login-btn']");
+    private By txtUsername = By.xpath("//input[@placeholder='Enter username']");
+    private By lnkNavigation = By.cssSelector("nav a");
+    
+    public SeleniumPageObject(WebDriver driver) {
+        this.driver = driver;
+    }
+    
+    public WebElement getBtnLogin() {
+        return driver.findElement(btnLogin);
+    }
+    
+    public WebElement getTxtUsername() {
+        return driver.findElement(txtUsername);
+    }
+    
+    public List<WebElement> getLnkNavigation() {
+        return driver.findElements(lnkNavigation);
+    }
+}
+```
+
+### Element Naming Convention
+| Prefix | Element Type | Example |
+|--------|-------------|----------|
+| `btn` | Button | `btnSubmit`, `btnLogin` |
+| `lnk` | Link | `lnkForgotPassword`, `lnkHome` |
+| `txt` | Text Input | `txtUsername`, `txtEmail` |
+| `chk` | Checkbox | `chkRememberMe`, `chkTerms` |
+| `rdo` | Radio Button | `rdoGender`, `rdoPayment` |
+| `ddl` | Dropdown | `ddlCountry`, `ddlLanguage` |
+| `inp` | Generic Input | `inpSearch`, `inpFile` |
+| `frm` | Form | `frmLogin`, `frmRegistration` |
+| `tbl` | Table | `tblUsers`, `tblProducts` |
+| `nav` | Navigation | `navHeader`, `navSidebar` |
+| `dlg` | Dialog | `dlgConfirm`, `dlgAlert` |
+| `mnu` | Menu | `mnuDropdown`, `mnuContext` |
+| `hdr` | Header | `hdrTitle`, `hdrSection` |
+| `img` | Image | `imgLogo`, `imgProfile` |
+| `elm` | Generic Element | `elmContainer`, `elmWrapper` |
+
 ## 🏗️ Project Structure
 
 ```
@@ -160,30 +283,76 @@ cli_test_recorder_updated/
 ├── bin/
 │   └── recorder.js              # Main CLI entry point
 ├── lib/
-│   ├── browserManager.js        # Browser launch logic
-│   └── codeGenerator.js         # Code generation for frameworks
+│   ├── browserManager.js        # Browser launch logic (Chromium/Firefox/WebKit)
+│   └── codeGenerator.js         # Code generation (Playwright/Selenium)
 ├── recorderScripts/
-│   ├── recorderScript.js        # Client-side recording logic
+│   ├── recorderScript.js        # Client-side recording & scanning logic
 │   └── recorderUI.html          # Recorder UI with modern design
 ├── package.json
 └── README.md
 ```
 
+### Architecture Overview
+
+#### bin/recorder.js
+- **CLI Entry Point**: Parses command-line arguments (--url, --browser, --replay)
+- **Browser Management**: Launches main browser and detached recorder window (650px, right-aligned)
+- **Script Injection**: Injects recorderScript.js into target pages and new tabs/popups
+- **Navigation Tracking**: Monitors page navigation and re-injects recorder
+- **Event Collection**: Receives events from browser via `sendToRecorder` exposed function
+- **Scan Integration**: Exposes `requestScan()` and `requestScanSection()` to recorder UI
+- **Auto-save**: Saves recorded events to `recordedSteps.json` on stop
+- **Code Output**: Generates Playwright and Selenium code to console
+
+#### lib/browserManager.js
+- **Multi-browser Support**: Launches Chromium, Firefox, or WebKit
+- **Headless Mode**: Configurable (default: false for recording)
+- **Context Management**: Creates browser context and pages
+
+#### lib/codeGenerator.js
+- **Playwright Generator**: Uses advanced locators (getByRole, getByTestId, getByLabel, etc.)
+- **Selenium Generator**: Respects user's CSS/XPath choice from context menu
+- **Action Mapping**: Converts recorded events to framework-specific syntax
+- **Assertion Support**: Generates expect/assert statements for validations
+
 ## 🔧 Configuration
 
 ### Recorder Window
 - **Width**: 650px
-- **Position**: Right side of screen
-- **Height**: Full screen
+- **Position**: Right side of screen (auto-calculated based on screen width)
+- **Height**: Full screen (matches screen height)
+- **Auto-positioning**: `window.moveTo(screenWidth - 650, 0)`
+
+### Browser Options
+- **Chromium** (default): `--browser chromium`
+- **Firefox**: `--browser firefox`
+- **WebKit**: `--browser webkit`
+- **Headless**: Disabled for recording (requires visible browser)
+
+### Replay Mode
+- **Command**: `--replay recordedSteps.json`
+- **Purpose**: Replay previously recorded steps
+- **Actions**: Executes click and input events from JSON file
 
 ### Locator Priority
-1. data-testid (Score: 100)
-2. ID (Score: 90)
-3. name (Score: 85)
-4. aria-label (Score: 80)
-5. placeholder (Score: 75)
-6. CSS Path (Score: 30)
-7. XPath (Score: 20)
+1. **data-testid** (Score: 100) - Highest priority for test automation
+2. **getByRole** with name (Score: 95) - Playwright semantic locator
+3. **ID** (Score: 90) - Unique identifier
+4. **getByLabel** (Score: 88) - Form labels
+5. **name** (Score: 85) - Form element names
+6. **aria-label** (Score: 80) - Accessibility attributes
+7. **getByTestId** chaining (Score: 78) - Parent-child relationships
+8. **getByPlaceholder** (Score: 75) - Input placeholders
+9. **filter** with hasText (Score: 72) - Text-based filtering
+10. **CSS Path** (Score: 30) - Structural selectors
+11. **XPath** (Score: 20) - Fallback option
+
+### Selenium CSS Selector Strategy
+- **Hierarchical path building**: Traverses up to 4 levels of parent/grandparent elements
+- **Stable attributes**: Prioritizes IDs, data-testid, and non-dynamic classes
+- **nth-of-type**: Adds positional specificity when needed
+- **Uniqueness verification**: Ensures each selector matches exactly one element
+- **Example**: `#parent-id > div.content > button:nth-of-type(2)`
 
 ## 🐛 Troubleshooting
 
@@ -200,6 +369,16 @@ cli_test_recorder_updated/
 - Use context menu to see alternative locators
 - Check for dynamic classes (marked with ⚠️)
 - Try XPath or advanced locator strategies
+
+### Issue: Page scan not finding elements
+- Ensure page is fully loaded before scanning
+- Check if elements are hidden (display: none)
+- Try section scan for specific areas
+
+### Issue: Duplicate locators in POM
+- Tool automatically detects duplicates and generates unique XPath
+- Playwright uses semantic locators (can have duplicates by design)
+- Selenium gets unique CSS/XPath selectors
 
 ## 🤝 Contributing
 
@@ -219,6 +398,8 @@ MIT License - feel free to use this project for personal or commercial purposes.
 - Built with [Playwright](https://playwright.dev/)
 - Inspired by modern test automation best practices
 - UI design follows latest UX guidelines
+- Supports Selenium WebDriver patterns
+- PageFactory pattern for Java Selenium users
 
 ## 📞 Support
 
